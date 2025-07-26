@@ -4,5 +4,7 @@ export interface AuthService {
   hashPassword(password: string): Promise<string>;
   comparePassword(password: string, hashedPassword: string): Promise<boolean>;
   generateToken(user: User): string;
-  verifyToken(token: string): { userId: string; email: string } | null;
+  verifyToken(token: string): Promise<{ userId: string; email: string } | null>;
+  invalidateToken(token: string): Promise<void>;
+  isTokenInvalid(token: string): Promise<boolean>;
 } 

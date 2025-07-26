@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { RegisterUserUseCase, LoginUserUseCase, GetCurrentUserUseCase } from '@/application';
+import { RegisterUserUseCase, LoginUserUseCase, GetCurrentUserUseCase, LogoutUserUseCase } from '@/application';
 import { AuthenticatedRequest } from '@/shared';
 
 export class AuthController {
   constructor(
     private registerUserUseCase: RegisterUserUseCase,
     private loginUserUseCase: LoginUserUseCase,
-    private getCurrentUserUseCase: GetCurrentUserUseCase
+    private getCurrentUserUseCase: GetCurrentUserUseCase,
+    private logoutUserUseCase: LogoutUserUseCase
   ) {}
 
   async register(req: Request, res: Response): Promise<void> {
@@ -142,6 +143,44 @@ export class AuthController {
       res.status(500).json({
         error: 'Internal Server Error',
         message: 'Failed to get current user',
+      });
+    }
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    try {
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Authorization header with Bearer token is required',
+        });
+        return;
+      }
+
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      
+      await this.logoutUserUseCase.execute(token);
+
+      res.status(200).json({
+        message: 'Logout successful',
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Invalid token') {
+          res.status(401).json({
+            error: 'Unauthorized',
+            message: error.message,
+          });
+          return;
+        }
+      }
+
+      console.error('Logout error:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Failed to logout',
       });
     }
   }

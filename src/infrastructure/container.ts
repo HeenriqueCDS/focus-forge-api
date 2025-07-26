@@ -1,13 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaUserRepository, JwtAuthService, AuthController, createAuthRoutes } from '@/infrastructure';
-import { RegisterUserUseCase, LoginUserUseCase, GetCurrentUserUseCase } from '@/application';
+import { RegisterUserUseCase, LoginUserUseCase, GetCurrentUserUseCase, LogoutUserUseCaseImpl, LogoutUserUseCase } from '@/application';
 
 export class Container {
   private static instance: Container;
   private prisma: PrismaClient;
+  private authService: JwtAuthService;
 
   private constructor() {
     this.prisma = new PrismaClient();
+    this.authService = new JwtAuthService();
   }
 
   static getInstance(): Container {
@@ -24,7 +26,7 @@ export class Container {
 
   // Services
   getAuthService(): JwtAuthService {
-    return new JwtAuthService();
+    return this.authService;
   }
 
   // Use Cases
@@ -46,12 +48,17 @@ export class Container {
     return new GetCurrentUserUseCase(this.getUserRepository());
   }
 
+  getLogoutUserUseCase(): LogoutUserUseCase {
+    return new LogoutUserUseCaseImpl(this.getAuthService());
+  }
+
   // Controllers
   getAuthController(): AuthController {
     return new AuthController(
       this.getRegisterUserUseCase(),
       this.getLoginUserUseCase(),
-      this.getGetCurrentUserUseCase()
+      this.getGetCurrentUserUseCase(),
+      this.getLogoutUserUseCase()
     );
   }
 

@@ -9,7 +9,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export function authMiddleware(authService: AuthService) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const authHeader = req.headers.authorization;
       
@@ -22,7 +22,7 @@ export function authMiddleware(authService: AuthService) {
       }
 
       const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      const decoded = authService.verifyToken(token);
+      const decoded = await authService.verifyToken(token);
 
       if (!decoded) {
         res.status(401).json({
