@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focus-forge-backend
+    env_file:
+      - .env.development
+    ports:
+      - "3000:3000"
+    networks:
+      - backend_focus-forge-network
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+networks:
+  backend_focus-forge-network:
+    external: true

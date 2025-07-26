@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  fullName   String
+  avatarUrl  String?
+  password   String?
+  googleId   String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  tasks      Task[]
+  categories Category[]
+  documents  Document[]
+  chats      Chat[]
+  messages   Message[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   // Hexadecimal color
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  name        String
+  description String?   // Markdown content
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  concludedAt DateTime?
+  categoryId  String?
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  name      String
+  type      DocumentType
+  content   String   // Chunked content for RAG
+  embedding Unsupported("vector(1536)")? // OpenAI embeddings
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  title     String?
+  role      AssistantRole @default(PRODUCTIVITY_COACH)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  role      MessageRole
+  chatId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BACKLOG
+}
+
+enum DocumentType {
+  PDF
+  TEXT
+}
+
+enum AssistantRole {
+  PRODUCTIVITY_COACH
+  CASUAL_ASSISTANT
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}

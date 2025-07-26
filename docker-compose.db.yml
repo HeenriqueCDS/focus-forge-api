@@ -1,0 +1,48 @@
+services:
+  # PostgreSQL Database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: focus-forge-postgres
+    environment:
+      POSTGRES_DB: focus_forge
+      POSTGRES_USER: focus_forge_user
+      POSTGRES_PASSWORD: focus_forge_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - focus-forge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U focus_forge_user -d focus_forge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  # Redis for caching and session storage (optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: focus-forge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - focus-forge-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  focus-forge-network:
+    driver: bridge 
